@@ -40,7 +40,22 @@ window.onload = function() {
       return menu;
     };
 
+// **********************  Hojas  *************************
+    var tree = new ClassyLeaves({
+      leaves: 20,
+      maxY: -10,
+      multiplyOnClick: true,
+      multiply: 2,
+      infinite: true,
+      speed: 4000
+        });
+    $('body').on('click', '.addLeaf', function() {
+      console.log('8');
+      tree.add(8);
+      return false;
+    });
 
+// **********************Tabla****************************
   var table = new Tabulator("#example-table", {
     height: "500px",
     data:data,
@@ -52,11 +67,30 @@ window.onload = function() {
     responsiveLayout:true,
     clipboard:true,    
     placeholder:"Esperando por datos a ser cargados...",
-    headerSortTristate:true, 
+    headerSortTristate:true,
+    // persistence:{
+    //   sort:true,
+    //   filter:true,
+    //   columns:true,
+    // },
+    // persistenceID:"examplePerststance", 
     columns: [ //Define Table Columns
       { title:"Sec",formatter:"rownum", headerSort:false, hozAlign:"center", maxWidth:55, visible:false, responsive:5, headerMenu:headerMenu},
       { title:"ID Ind",field: "Id", sorter: "number", hozAlign:"center", headerFilterPlaceholder:"ID", headerFilter:"input", visible:false,  width:60, maxWidth:60, responsive:4, headerMenu:headerMenu},
-      { title:"ID Padres",field: "pid", sorter: "number", hozAlign:"center", headerFilterPlaceholder:"Padres", headerFilter:"input", visible:false,  width:75, maxWidth:80, responsive:4, headerMenu:headerMenu},
+      { title:"ID Padres",field: "pid", sorter: "number", hozAlign:"center", headerFilterPlaceholder:"Padres", headerFilter:"input", visible:false,  width:75, maxWidth:80, responsive:4, headerMenu:headerMenu,
+        cellClick:function(e, cell) {
+          var celda = cell._cell.row.data;
+          fieldST.value = "";
+          valueST.value = "";
+          fieldCT.value = "";
+          valueCT.value = "";
+          fieldEl.value = "";
+          typeEl.value = "=";
+          valueEl.value = "";
+          table.clearFilter();
+          table.setFilter("fid", "=", celda.pid);
+        }
+      },
       { title:"ID Fam",field: "fid", sorter: "number", hozAlign:"center", headerFilterPlaceholder:"Familia", headerFilter:"input", visible:false,  width:75, maxWidth:80, responsive:4, headerMenu:headerMenu},
       { title:"Tipo",field: "typ", sorter: "string", align: "center", headerFilterPlaceholder:"Tipo", headerFilter:"input", width:63, maxWidth:75, responsive:3, headerMenu:headerMenu,
        		tooltip:function(cell){
@@ -129,7 +163,14 @@ window.onload = function() {
 	            if (celda.typ == "M" || celda.typ == "P" || celda.typ == "N"){             
 	              var conyuge = data.map( function(family){
 	                if (family.fid == conyg && family.typ == type && family.sex != gend){
-	                  $("#cy").html("Cónyugue: <i><b>" + family.ns+" "+family.lns + "</b></i>");
+                    var rms = family.rms;
+                    var img = family.img - 1;
+                    var link = recordset.map(function (record) {
+                      if (record.id == rms) {
+                        var myurl = 'https://www.familysearch.org/records/images/image-details?page=1&place=' + record.locat + '&rmsId=' + record.rmsID + '&imageIndex=' + img + '&singleView=true", target="_blank"';
+                        $('#cy').html('Cónyugue: <i><a href="' + myurl + '>' + family.ns + ' ' + family.lns + '</a></i>');
+                      }
+                    })
 	                };
 	              });
 	              } else {
@@ -220,12 +261,13 @@ window.onload = function() {
 	            $("#recordModal").modal(); 	           
           	}
   	   },
-      { title:"Nombres",field: "ns", sorter: "string", align: "left", headerFilterPlaceholder:"Nombres(s)", minWidth:150, headerFilter: "input", widthGrow:1.5, headerMenu:headerMenu },
+      { title:"Nombres",field: "ns", sorter: "string", align: "left", headerFilterPlaceholder:"Nombre(s)", minWidth:150, headerFilter: "input", widthGrow:1.5, headerMenu:headerMenu },
       { title:"Apellidos",field: "lns", sorter: "string", bottomCalc: "count", headerFilterPlaceholder:"Apellido(s)", minWidth:150, headerFilter: "input", widthGrow:1.5, headerMenu:headerMenu },
       { title:"Sexo",field: "sex", sorter: "string", align: "center", editor:"select", headerFilterPlaceholder:"Sexo", headerFilter:"input", width:55, maxWidth:60, responsive:6, headerMenu:headerMenu },
+      { title:"Indice",field: "ind", sorter: "string", align: "left" , headerFilterPlaceholder:"Indice", headerFilter:"input", maxWidth:85, headerMenu:headerMenu},
+      { title:"Padres",field: "pad", sorter: "string", align: "left" , headerFilterPlaceholder:"Padres",headerFilter:"input", minWidth:50, widthGrow:1.25, headerMenu:headerMenu, responsive:4},
       { title:"Año",field: "yy", sorter: "number", align: "center", headerFilter:"input", headerFilterPlaceholder:"Año", headerFilterParams:{values:true}, minWidth:45, maxWidth:60, headerMenu:headerMenu },
-      { title:"Notas",field: "not", sorter: "string", align: "left" , headerFilterPlaceholder:"Notas",headerFilter:"input", minWidth:50, headerMenu:headerMenu, responsive:4},
-      { title:"Indice",field: "ind", sorter: "string", align: "left" , headerFilterPlaceholder:"Indice",headerFilter:"input", minWidth:20, widthGrow:1, headerMenu:headerMenu},
+      { title:"Notas",field: "not", sorter: "string", align: "left" , headerFilterPlaceholder:"Notas",headerFilter:"input", visible:false, minWidth:50, headerMenu:headerMenu, responsive:4},
       { title:"Ciudad",field: "cit", sorter: "number", hozAlign:"center", headerFilter:"input", visible:false,  width:50, maxWidth:60, responsive:4},
       { title:"Estado",field: "st", sorter: "number", hozAlign:"center",  headerFilter:"input", visible:false,  width:50, maxWidth:60, responsive:4},
     ],
@@ -300,12 +342,16 @@ window.onload = function() {
           table.showColumn("Id");
           table.showColumn("pid");
           table.showColumn("fid");
+          table.showColumn("not");
+          table.hideColumn("sex");
         }, 1000)
       } else {
           $this.removeClass('col-lg-12').addClass('col-lg-9');
           table.hideColumn("Id");
           table.hideColumn("pid");
           table.hideColumn("fid");
+          table.hideColumn("not");
+          table.showColumn("sex");
         }
     })
   });
@@ -336,6 +382,7 @@ window.onload = function() {
       fieldCT.value = "";
       valueCT.value = "";
       table.clearFilter();
+      $("#title").html("Registros Parroquiales y Civiles de Venezuela");
     });
 
   //load a local file
@@ -344,24 +391,24 @@ window.onload = function() {
   });
 
   // Genera las lista de archivos disponibles
-  var str = '';
-  str = '<h4>Registros en Indice Genealógico</h4> ';
-  str +='<p>Los registros que se muestran en la tabla, corresponden a los siguientes eventos:</p>';
+  // var str = '';
+  // str = '<h4>Registros en Indice Genealógico</h4> ';
+  // str +='<p>Los registros que se muestran en la tabla, corresponden a los siguientes eventos:</p>';
 
-  for ( i in aside) {
-    str += '<div class="p-2">';
-    str += '<h6 class="font-italic">';
-    str += aside[i].category;
-    str += '</h6>';
-    str += '<ol class="list-unstyled mb-0">';
+  // for ( i in aside) {
+  //   str += '<div class="p-2">';
+  //   str += '<h6 class="font-italic">';
+  //   str += aside[i].category;
+  //   str += '</h6>';
+  //   str += '<ol class="list-unstyled mb-0">';
           
-    for (j in aside[i].items) {
-      str += '<li><a target="_blank" href="'+ aside[i].items[j].link +'">';
-      str += aside[i].items[j].alias + '</a></li>';
-    } str += '</ol></div>';
-  };
+  //   for (j in aside[i].items) {
+  //     str += '<li><a target="_blank" href="'+ aside[i].items[j].link +'">';
+  //     str += aside[i].items[j].alias + '</a></li>';
+  //   } str += '</ol></div>';
+  // };
 
-  $("#aside").html(str);
+  // $("#aside").html(str);
 
 
   localidades.sort(GetSortOrder("estado"));//ordena localidades por estado
@@ -391,6 +438,8 @@ window.onload = function() {
       }
     }
   };
+
+
 
 //******************************************************************
 
@@ -526,5 +575,7 @@ window.onload = function() {
     $("#mama").html("Madre: <i>Información no disponible</i>" );
     $("#papa").html("Padre: <i>Información no disponible</i>" );
   };
+
+
 
 };
